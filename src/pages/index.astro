@@ -1,0 +1,41 @@
+---
+import Base from "../layouts/Base.astro";
+import { ensureSchema, pool } from "../lib/db";
+
+let products: Array<{id: number; name: string; description: string; price: string; image_url: string}> = [];
+let dbError = false;
+try {
+  await ensureSchema();
+  const result = await pool.query("SELECT id, name, description, price::text, image_url FROM products ORDER BY created_at DESC");
+  products = result.rows;
+} catch (error) {
+  console.error("Catalog database error:", error);
+  dbError = true;
+}
+const formatPrice = (value: string) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(value));
+---
+<Base title="Katalog Produk">
+  <div class="shell">
+    <section class="hero">
+      <div class="eyebrow">Product catalog · self-hosted</div>
+      <h1>Produk pilihan.<br /><span style="color:#a3e635">Satu katalog.</span></h1>
+      <p class="muted">Katalog produk sederhana yang datanya tersimpan di PostgreSQL.</p>
+    </section>
+    {dbError && <div class="notice error">Database belum dapat dihubungi. Periksa konfigurasi DATABASE_URL pada Coolify.</div>}
+    {!dbError && products.length === 0 && <div class="notice">Belum ada produk. Masuk ke <a href="/admin" style="text-decoration:underline;color:#d9f99d">dashboard admin</a> untuk menambahkan produk pertama.</div>}
+    <section class="products">
+      {products.map((product) => (
+        <article class="card">
+          <div class="product-image">
+            {product.image_url ? <img src={product.image_url} alt={product.name} loading="lazy" /> : <div class="placeholder">P.</div>}
+          </div>
+          <div class="cardbody">
+            <h2>{product.name}</h2>
+            <div class="desc">{product.description || "Tidak ada deskripsi produk."}</div>
+            <div class="price">{formatPrice(product.price)}</div>
+          </div>
+        </article>
+      ))}
+    </section>
+  </div>
+</Base>

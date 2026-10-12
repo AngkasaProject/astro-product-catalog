@@ -1,0 +1,21 @@
+---
+import Base from "../../layouts/Base.astro";
+import { isAdmin } from "../../lib/auth";
+
+if (await isAdmin(Astro.cookies)) return Astro.redirect("/admin");
+const failed = Astro.url.searchParams.get("error") === "1";
+---
+<Base title="Login Admin · Katalog Produk">
+  <div class="shell" style="max-width:480px;padding:60px 0 80px">
+    <section class="panel">
+      <div class="eyebrow">Restricted area</div>
+      <h1 style="margin:10px 0">Login admin</h1>
+      <p class="muted">Masuk untuk mengelola produk katalog.</p>
+      {failed && <div class="notice error">Password tidak sesuai. Coba lagi.</div>}
+      <form class="formgrid" method="post" action="/api/login">
+        <div class="field"><label for="password">Password admin</label><input id="password" name="password" type="password" autocomplete="current-password" required /></div>
+        <button class="btn full" type="submit">Masuk dashboard</button>
+      </form>
+    </section>
+  </div>
+</Base>

@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: catalog_db
+      POSTGRES_USER: catalog_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - catalog_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalog_user -d catalog_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - catalog_internal
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://catalog_user:${DB_PASSWORD}@postgres:5432/catalog_db
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      HOST: 0.0.0.0
+      PORT: 4321
+    ports:
+      - "${APP_PORT:-4321}:4321"
+    networks:
+      - catalog_internal
+
+volumes:
+  catalog_postgres_data:
+
+networks:
+  catalog_internal:

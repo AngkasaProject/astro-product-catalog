@@ -1,0 +1,19 @@
+---
+import { ensureSchema, pool } from "../lib/db";
+
+let status = 200;
+let body: Record<string, unknown> = { ok: true, app: "astro-product-catalog" };
+try {
+  await ensureSchema();
+  const result = await pool.query("SELECT NOW() AS database_time, COUNT(*)::int AS product_count FROM products");
+  body.database = "connected";
+  body.databaseTime = result.rows[0].database_time;
+  body.productCount = result.rows[0].product_count;
+} catch (error) {
+  status = 503;
+  body = { ok: false, database: "disconnected", error: error instanceof Error ? error.message : "Database check failed" };
+}
+Astro.response.status = status;
+Astro.response.headers.set("Content-Type", "application/json; charset=utf-8");
+---
+{JSON.stringify(body)}

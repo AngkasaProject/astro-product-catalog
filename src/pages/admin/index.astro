@@ -1,0 +1,63 @@
+---
+import Base from "../../layouts/Base.astro";
+import { isAdmin } from "../../lib/auth";
+import { ensureSchema, pool } from "../../lib/db";
+
+if (!(await isAdmin(Astro.cookies))) return Astro.redirect("/admin/login");
+
+let products: Array<{id: number; name: string; description: string; price: string; image_url: string}> = [];
+let errorMessage = "";
+try {
+  await ensureSchema();
+  const result = await pool.query("SELECT id, name, description, price::text, image_url FROM products ORDER BY created_at DESC");
+  products = result.rows;
+} catch (error) {
+  console.error("Admin database error:", error);
+  errorMessage = "Database tidak dapat dihubungi. Periksa DATABASE_URL.";
+}
+const notice = Astro.url.searchParams.get("status");
+const formatPrice = (value: string) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(value));
+---
+<Base title="Dashboard Admin · Katalog Produk">
+  <div class="shell adminwrap">
+    <div class="adminhead">
+      <div><div class="eyebrow">Admin workspace</div><h1>Dashboard produk</h1><p class="muted">Kelola katalog yang tampil di halaman publik.</p></div>
+      <form method="post" action="/api/logout"><button class="btn secondary" type="submit">Keluar</button></form>
+    </div>
+    {notice === "created" && <div class="notice success">Produk berhasil ditambahkan.</div>}
+    {notice === "updated" && <div class="notice success">Produk berhasil diperbarui.</div>}
+    {notice === "deleted" && <div class="notice success">Produk berhasil dihapus.</div>}
+    {errorMessage && <div class="notice error">{errorMessage}</div>}
+    <section class="panel">
+      <h2 style="margin-top:0">Tambah produk</h2>
+      <form class="formgrid" method="post" action="/api/products">
+        <div class="field"><label for="name">Nama produk *</label><input id="name" name="name" maxlength="160" required /></div>
+        <div class="field"><label for="description">Deskripsi</label><textarea id="description" name="description" maxlength="2000"></textarea></div>
+        <div class="field"><label for="price">Harga (Rupiah) *</label><input id="price" name="price" type="number" min="0" step="1" required /></div>
+        <div class="field"><label for="image_url">URL gambar (opsional)</label><input id="image_url" name="image_url" type="url" maxlength="1000" placeholder="https://example.com/produk.jpg" /></div>
+        <button class="btn" type="submit">Simpan produk</button>
+      </form>
+    </section>
+    <section class="panel" style="margin-top:22px">
+      <div class="adminhead"><div><h2 style="margin:0">Produk tersimpan</h2><p class="muted" style="margin:6px 0 0">{products.length} produk</p></div><a href="/health" target="_blank" rel="noreferrer" class="btn secondary">Tes koneksi DB</a></div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Produk</th><th>Harga</th><th>Aksi</th></tr></thead>
+          <tbody>
+            {products.map((product) => (
+              <tr>
+                <td><strong>{product.name}</strong><div class="muted">{product.description.slice(0, 100)}</div></td>
+                <td>{formatPrice(product.price)}</td>
+                <td class="actions">
+                  <a class="btn secondary" href={`/admin/edit/${product.id}`}>Edit</a>
+                  <form method="post" action={`/api/products/${product.id}/delete`} style="display:inline" onsubmit="return confirm('Hapus produk ini?')"><button class="btn danger" type="submit">Hapus</button></form>
+                </td>
+              </tr>
+            ))}
+            {products.length === 0 && <tr><td colspan="3" class="muted">Belum ada produk.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</Base>
