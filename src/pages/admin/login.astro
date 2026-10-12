@@ -1,21 +1,6 @@
 ---
-import Base from "../../layouts/Base.astro";
-import { isAdmin } from "../../lib/auth";
-
-if (await isAdmin(Astro.cookies)) return Astro.redirect("/admin");
-const failed = Astro.url.searchParams.get("error") === "1";
+import Base from "../../layouts/Base.astro"; import { isAdmin } from "../../lib/auth";
+if(await isAdmin(Astro.cookies)) return Astro.redirect("/admin");
+const failed=Astro.url.searchParams.get("error")==="1";
 ---
-<Base title="Login Admin · Katalog Produk">
-  <div class="shell" style="max-width:480px;padding:60px 0 80px">
-    <section class="panel">
-      <div class="eyebrow">Restricted area</div>
-      <h1 style="margin:10px 0">Login admin</h1>
-      <p class="muted">Masuk untuk mengelola produk katalog.</p>
-      {failed && <div class="notice error">Password tidak sesuai. Coba lagi.</div>}
-      <form class="formgrid" method="post" action="/api/login">
-        <div class="field"><label for="password">Password admin</label><input id="password" name="password" type="password" autocomplete="current-password" required /></div>
-        <button class="btn full" type="submit">Masuk dashboard</button>
-      </form>
-    </section>
-  </div>
-</Base>
+<Base title="Login Admin"><div class="mx-auto flex min-h-[calc(100vh-9rem)] max-w-6xl items-center justify-center px-4 py-12"><section class="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8"><div class="mx-auto grid size-12 place-items-center rounded-xl bg-primary text-2xl text-primary-foreground">⌑</div><div class="mt-5 text-center"><h1 class="text-2xl font-semibold tracking-tight">Login admin</h1><p class="mt-2 text-sm text-muted-foreground">Masuk untuk mengelola katalog produk.</p></div>{failed && <div class="mt-5 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">Password tidak sesuai.</div>}<form class="mt-6 space-y-4" method="post" action="/api/login"><div class="space-y-2"><label for="password" class="text-sm font-medium">Password admin</label><input id="password" name="password" type="password" autocomplete="current-password" required class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"/></div><button class="h-10 w-full rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90" type="submit">Masuk ke dashboard</button></form><a href="/" class="mt-5 block text-center text-sm text-muted-foreground underline underline-offset-4">Kembali ke katalog</a></section></div></Base>

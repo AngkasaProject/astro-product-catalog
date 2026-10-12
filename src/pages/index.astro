@@ -1,41 +1,14 @@
 ---
 import Base from "../layouts/Base.astro";
 import { ensureSchema, pool } from "../lib/db";
-
-let products: Array<{id: number; name: string; description: string; price: string; image_url: string}> = [];
-let dbError = false;
-try {
-  await ensureSchema();
-  const result = await pool.query("SELECT id, name, description, price::text, image_url FROM products ORDER BY created_at DESC");
-  products = result.rows;
-} catch (error) {
-  console.error("Catalog database error:", error);
-  dbError = true;
-}
-const formatPrice = (value: string) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(value));
+let products = []; let dbError = false;
+try { await ensureSchema(); products = (await pool.query("SELECT id,name,description,price::text,image_url FROM products ORDER BY created_at DESC")).rows; } catch(e) { console.error(e); dbError = true; }
+const money = v => new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(v));
 ---
-<Base title="Katalog Produk">
-  <div class="shell">
-    <section class="hero">
-      <div class="eyebrow">Product catalog · self-hosted</div>
-      <h1>Produk pilihan.<br /><span style="color:#a3e635">Satu katalog.</span></h1>
-      <p class="muted">Katalog produk sederhana yang datanya tersimpan di PostgreSQL.</p>
-    </section>
-    {dbError && <div class="notice error">Database belum dapat dihubungi. Periksa konfigurasi DATABASE_URL pada Coolify.</div>}
-    {!dbError && products.length === 0 && <div class="notice">Belum ada produk. Masuk ke <a href="/admin" style="text-decoration:underline;color:#d9f99d">dashboard admin</a> untuk menambahkan produk pertama.</div>}
-    <section class="products">
-      {products.map((product) => (
-        <article class="card">
-          <div class="product-image">
-            {product.image_url ? <img src={product.image_url} alt={product.name} loading="lazy" /> : <div class="placeholder">P.</div>}
-          </div>
-          <div class="cardbody">
-            <h2>{product.name}</h2>
-            <div class="desc">{product.description || "Tidak ada deskripsi produk."}</div>
-            <div class="price">{formatPrice(product.price)}</div>
-          </div>
-        </article>
-      ))}
-    </section>
-  </div>
-</Base>
+<Base title="Katalog Produk"><section class="border-b border-border bg-card"><div class="mx-auto grid max-w-6xl gap-8 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
+<div><div class="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground"><span class="size-1.5 rounded-full bg-primary"></span>KATALOG PRODUK</div><h1 class="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">Produk pilihan, <span class="text-muted-foreground">dibuat sederhana.</span></h1><p class="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">Jelajahi katalog produk dan temukan detail yang kamu butuhkan.</p><a href="#produk" class="mt-7 inline-flex h-10 items-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90">Jelajahi produk ↓</a></div>
+<div class="relative hidden min-h-64 items-center justify-center rounded-2xl border border-border bg-muted p-8 lg:flex"><div class="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_0%,rgba(163,230,53,.17),transparent_65%)]"></div><div class="relative grid w-full max-w-xs grid-cols-2 gap-3"><div class="flex aspect-[4/5] items-end rounded-xl border border-border bg-card p-4 text-sm font-medium shadow-sm">Pilihan terbaik</div><div class="mt-8 flex aspect-[4/5] items-end rounded-xl border border-border bg-card p-4 text-sm font-medium shadow-sm">Katalog modern</div></div></div></div></section>
+<section id="produk" class="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14"><div class="mb-6 flex items-end justify-between"><div><h2 class="text-2xl font-semibold tracking-tight">Semua produk</h2><p class="mt-1 text-sm text-muted-foreground">Pilihan yang tersedia di katalog.</p></div><span class="rounded-md border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground">{products.length} produk</span></div>
+{dbError && <div class="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">Database belum dapat dihubungi. Periksa DATABASE_URL.</div>}
+{!dbError && products.length === 0 && <div class="rounded-xl border border-dashed border-border bg-card px-6 py-14 text-center"><div class="mx-auto grid size-12 place-items-center rounded-xl bg-muted text-2xl text-muted-foreground">◇</div><h3 class="mt-4 font-medium">Belum ada produk</h3><p class="mt-1 text-sm text-muted-foreground">Tambahkan produk pertama melalui dashboard admin.</p><a href="/admin" class="mt-4 inline-flex h-9 items-center rounded-md border border-border bg-background px-4 text-sm font-medium shadow-sm hover:bg-muted">Buka dashboard</a></div>}
+<div class="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">{products.map(p => <article class="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><div class="aspect-[4/3] overflow-hidden bg-muted">{p.image_url ? <img src={p.image_url} alt={p.name} loading="lazy" class="size-full object-cover transition group-hover:scale-[1.03]"/> : <div class="grid size-full place-items-center text-4xl text-muted-foreground">◇</div>}</div><div class="p-3.5 sm:p-4"><h3 class="line-clamp-1 text-sm font-medium sm:text-base">{p.name}</h3><p class="mt-1.5 line-clamp-2 min-h-10 text-xs leading-5 text-muted-foreground sm:text-sm">{p.description || "Tidak ada deskripsi produk."}</p><p class="mt-3 text-sm font-semibold sm:text-base">{money(p.price)}</p></div></article>)}</div></section></Base>

@@ -1,27 +1,7 @@
 ---
-import Base from "../../../layouts/Base.astro";
-import { isAdmin } from "../../../lib/auth";
-import { ensureSchema, pool } from "../../../lib/db";
-
-if (!(await isAdmin(Astro.cookies))) return Astro.redirect("/admin/login");
-const id = Number(Astro.params.id);
-if (!Number.isSafeInteger(id) || id < 1) return new Response("ID produk tidak valid", { status: 400 });
-await ensureSchema();
-const result = await pool.query("SELECT id, name, description, price::text, image_url FROM products WHERE id = $1", [id]);
-if (result.rowCount === 0) return new Response("Produk tidak ditemukan", { status: 404 });
-const product = result.rows[0];
+import Base from "../../../layouts/Base.astro"; import {isAdmin} from "../../../lib/auth"; import {ensureSchema,pool} from "../../../lib/db";
+if(!(await isAdmin(Astro.cookies))) return Astro.redirect("/admin/login");
+const id=Number(Astro.params.id); if(!Number.isSafeInteger(id)||id<1) return new Response("ID produk tidak valid",{status:400});
+await ensureSchema(); const result=await pool.query("SELECT id,name,description,price::text,image_url FROM products WHERE id=$1",[id]); if(result.rowCount===0) return new Response("Produk tidak ditemukan",{status:404}); const p=result.rows[0];
 ---
-<Base title={`Edit ${product.name} · Katalog Produk`}>
-  <div class="shell adminwrap" style="max-width:760px">
-    <div class="adminhead"><div><div class="eyebrow">Product editor</div><h1>Edit produk</h1></div><a class="btn secondary" href="/admin">Kembali</a></div>
-    <section class="panel">
-      <form class="formgrid" method="post" action={`/api/products/${product.id}`}>
-        <div class="field"><label for="name">Nama produk *</label><input id="name" name="name" value={product.name} maxlength="160" required /></div>
-        <div class="field"><label for="description">Deskripsi</label><textarea id="description" name="description" maxlength="2000">{product.description}</textarea></div>
-        <div class="field"><label for="price">Harga (Rupiah) *</label><input id="price" name="price" type="number" min="0" step="1" value={Number(product.price)} required /></div>
-        <div class="field"><label for="image_url">URL gambar (opsional)</label><input id="image_url" name="image_url" type="url" maxlength="1000" value={product.image_url} /></div>
-        <button class="btn" type="submit">Simpan perubahan</button>
-      </form>
-    </section>
-  </div>
-</Base>
+<Base title="Edit Produk"><div class="mx-auto max-w-3xl px-4 py-8 sm:px-6"><a href="/admin" class="text-sm text-muted-foreground">← Kembali ke dashboard</a><h1 class="my-4 text-3xl font-semibold tracking-tight">Edit produk</h1><form class="space-y-5 rounded-xl border border-border bg-card p-5 shadow-sm sm:p-7" method="post" action={`/api/products/${p.id}`}><div class="space-y-2"><label for="name" class="text-sm font-medium">Nama produk *</label><input id="name" name="name" value={p.name} maxlength="160" required class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"/></div><div class="space-y-2"><label for="description" class="text-sm font-medium">Deskripsi</label><textarea id="description" name="description" maxlength="2000" class="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">{p.description}</textarea></div><div class="space-y-2"><label for="price" class="text-sm font-medium">Harga *</label><input id="price" name="price" type="number" min="0" step="1" value={Number(p.price)} required class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"/></div><div class="space-y-2"><label for="image_url" class="text-sm font-medium">URL gambar</label><input id="image_url" name="image_url" type="url" maxlength="1000" value={p.image_url} class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"/></div><div class="flex justify-end gap-2 border-t border-border pt-5"><a href="/admin" class="inline-flex h-10 items-center rounded-md border border-border px-4 text-sm">Batal</a><button class="h-10 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground">Simpan perubahan</button></div></form></div></Base>
